@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const fileSchema = new mongoose.Schema({
+    accessCode: {
+        type: Number,
+        required: false
+    },
     filename: {
         type: String,
         required: false,
@@ -9,12 +13,24 @@ const fileSchema = new mongoose.Schema({
         type: String,
         required: false,
     },
-    size: {
+    encoding: {
+        type: String,
+        required: false
+    },
+    mimeType: {
+        type: String,
+        required: false
+    },
+    fileSize: {
         type: Number,
         required: false,
     },
-    data: {
-        type: Buffer,
+    chunkSize: {
+        type: Number,
+        required: false
+    },
+    bucketName: {
+        type: String,
         required: false,
     },
 });

@@ -1,4 +1,5 @@
 const express = require("express");
+const fileModel = require("../Models/FileModel");
 const { fileStoreController, fileRetreiveController } = require("../Controllers/FileController");
 const router = express.Router();
 const crypto = require('crypto');
@@ -8,6 +9,7 @@ const multer = require('multer');
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
+
 
 
 
@@ -69,7 +71,30 @@ const upload = multer({ storage });
 
 // File Store route...
 router.post("/file-store", upload.single('file'), async (req, res) => {
+    console.log('FileData :', req.file);
     const randomCode = req.file.metadata.code;
+
+    //Configure file data...
+    const { originalname, metadata, encoding, mimetype, bucketName, size, chunkSize, contentType } = req.file;
+
+    //Format data before store in model...
+    const formatedData = {
+        accessCode: metadata.code,
+        filename: originalname,
+        contentType: contentType,
+        encoding: encoding,
+        mimeType: mimetype,
+        fileSize: size,
+        chunkSize: chunkSize,
+        bucketName: bucketName
+    }
+
+
+    //Store file data....
+    const newFileUpload = await fileModel(formatedData);
+    await newFileUpload.save();
+
+
     res.status(201).send({ message: "File uploaded successfully...", success: true, code: randomCode });
 });
 
@@ -174,7 +199,43 @@ router.get("/file-retrieve/:fileCode", async (req, res) => {
 });
 
 
+// DELETE route to delete a file by its code
+router.delete("/file-delete/:fileCode", async (req, res) => {
+    try {
+        const fileCode = req.params.fileCode;
+        console.log('Deleting file:', fileCode);
 
+        // Check if the GridFS connection is initialized
+        if (!gfs) {
+            console.error('GridFS is not initialized');
+            return res.status(500).json({ error: 'GridFS is not initialized' });
+        }
+
+        // Check file exist or not...
+        const fileExist = await gfs.files.findOne({ "metadata.code": fileCode });
+        if (!fileExist) {
+            return res.status(404).send({ message: "File not found...!!!", success: false });
+        }
+
+        // Delete the file from GridFS files collection
+        await gfs.files.deleteOne({ "metadata.code": fileCode });
+
+        // Check if the chunks collection is available
+        if (!gfs) {
+            console.error('Chunks collection is not available');
+            return res.status(500).json({ error: 'Chunks collection is not available' });
+        }
+
+        // Delete the associated chunks from GridFS chunks collection
+        await gfs.chunks.deleteMany({ files_id: fileExist._id });
+
+        // Respond with success message
+        res.status(200).json({ message: 'File deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting file:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 
 
