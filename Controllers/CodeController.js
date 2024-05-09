@@ -1,5 +1,7 @@
 const dataModel = require('../Models/DataModel');
 const crypto = require('crypto-js');
+const moment = require('moment');
+const colors = require('colors');
 
 
 //Post Code controller...
@@ -93,6 +95,49 @@ const getCodeController = async (req, res) => {
     }
 }
 
+
+//Memory Optimization....
+const memoryOptimize = async (req, res) => {
+    try {
+        // Find all file records
+        const allFiles = await dataModel.find({});
+
+        // Iterate through each file record
+        for (const file of allFiles) {
+
+            // Parse the current Date value using moment.js
+            const currentDate = moment();
+            console.log("Current Date:", currentDate.format('DD/MM/YYYY'));
+
+            // Add 5 days to the current Date
+            const updatedDate = moment(file.Date, 'DD/MM/YYYY').add(5, 'days');
+            console.log("Updated Date:", updatedDate.format('DD/MM/YYYY'));
+
+            // Check if the updated date is less than or equal to the current date
+            if (updatedDate.isSameOrBefore(currentDate, 'day')) {
+                // Delete the file record
+                await dataModel.deleteOne({ _id: file._id });
+
+                console.log(`Record deleted with Date: ${file.Date}`.bgMagenta.white);
+            }
+        }
+
+        // res.status(200).json({ message: `Records updated successfully.` });
+    } catch (err) {
+        console.error("Error updating records:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+// Set up a timer to call the records function every 1day....
+const updateInterval = 24 * 60 * 60 * 1000;
+setInterval(async () => {
+    try {
+        await memoryOptimize();
+    } catch (err) {
+        console.error("Error updating Records status:", err);
+    }
+}, updateInterval);
 
 
 
