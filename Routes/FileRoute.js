@@ -18,7 +18,7 @@ const fs = require('fs');
 /*********************************************  GRID-FS-CONFIGURATION ************************************************/
 
 // Mongo URI
-const mongoURI = 'mongodb+srv://root:root@share.muq2zac.mongodb.net/CodeStream?retryWrites=true&w=majority&appName=share';
+const mongoURI = '';
 
 // Create mongo connection
 const conn = mongoose.createConnection(mongoURI);
